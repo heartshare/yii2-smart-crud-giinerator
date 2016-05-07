@@ -6,5 +6,9 @@ The screenshot below show the modifications to the CRUD generator form view.
 
 
 * The checkbox enables the smart foreign key generations. 
-* The default name column specifies the column that contains the descriptive value of the forein key. This column is called 'name' by default.
-* The default username column provides a separate name for the special case of the user table.
+* The default name column specifies the column that contains the descriptive value of the foreing key. The default column name is 'name'.
+* The default username column provides a separate name for the special case of the user table. The default username column name is 'username'.
+
+## Installation
+
+To use this modification, replace the `app\vendor\yiisoft\yii2-gii\generators\crud` with the `crud` directory included here.
