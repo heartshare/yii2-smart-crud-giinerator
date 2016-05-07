@@ -18,8 +18,10 @@ To use this modification, replace the `app\vendor\yiisoft\yii2-gii\generators\cr
 
 * Database is MySQL
 * Related tables have foreign key constrains defined in the database.
-* All tables have an Integer type surrogate primary key column named `id` which is NOT NULL, UNIQUE and AUTOINCREMENT.
-* All tables have a text  (VARCHAR) type `name` column. It is recommended that this column be NOT NULL and optionally UNIQUE. This is the column that will give meaning to the foreign key columns in dropboxes , DetailView and GridView widgets.
+* All tables have an Integer type surrogate primary key column named `id` which is **NOT NULL**, **UNIQUE** and **AUTOINCREMENT**.
+* All tables have a text  (VARCHAR) type `name` column. It is recommended that this column be **NOT NULL** and optionally **UNIQUE**. This is the column that will give meaning to the foreign key columns in dropboxes , DetailView and GridView widgets.
 * Special Case: User table
   * Yii2-Admin extension will be used to implement RBAC management.
   * If the foreign table is **`user`**, then instead of `name` we expect a `username` column with same configuration as `name` above. If the code fails to find `username` then it will fall back and try to find `name`. If no user model is found, then it will generate an Exception.
+
+For more recommendations on the database schema best practices see: ![Guidelines for good schema design] (http://www.yiiframework.com/wiki/227/guidelines-for-good-schema-design/)
