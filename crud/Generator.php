@@ -241,38 +241,36 @@ class Generator extends \yii\gii\Generator
 
 
 		/**
+		 * Get available foreign keys to later generate dropdown lists
+		 * This code also gets the table name of the foreign key.
+		 * @param string $attribute the column name being checked for foreign key
+		 * @return string[] array of "column names"=>"tableName" pairs that have a foreign key.
+		 */
+		public function getForeignKeysList(){
+        $tableSchema = $this->getTableSchema();
+				$fks = $tableSchema->foreignKeys;
+				$fkeys = array();
+				$tableName=$tableSchema->name;
+				if(is_array($fks)){
+					foreach($fks as $fk) {
+						$tableName = array_shift($fk); //take out the first element it is the table name
+						foreach(array_keys($fk) as $colname) {
+							$fkeys[$colname] = $tableName;
+						}
+					}
+				}
+				return $fkeys;	
+		}
+
+
+		/**
 		 * Checks if the $attribute column has a foreign key.
 		 * @param string $attribute the column name being checked for foreign key
 		 * @return boolean indicating if the column name has a foreign key.
 		 */
 		public function isForeignKey($attribute){
-				$foreignKeys = $this->getForeignKeysList($attribute);
-				$tableName = $foreignKeys[0];
-				$keys = $foreignKeys[1];
-				return in_array($attribute, $keys);
-		}
-
-
-		/**
-		 * Get available foreign keys to later generate dropdown lists
-		 * This code also gets the table name of the foreign key.
-		 * @param string $attribute the column name being checked for foreign key
-		 * @return string[] array of column names that have a foreign key.
-		 */
-		public function getForeignKeysList($attribute){
-        $tableSchema = $this->getTableSchema();
-				$fks = $tableSchema->foreignKeys;
-				$keys = array();
-				$tableName;
-				if(is_array($fks)){
-					foreach($fks as $fk) {
-						$tableName = array_shift($fk); //take out the first element it is the table name
-						foreach(array_keys($fk) as $colname) {
-							$fkeys[] = $colname;
-						}
-					}
-				}
-				return array($tableName,$fkeys);			
+				$foreignKeys = $this->getForeignKeysList();
+				return in_array($attribute, array_keys($foreignKeys));
 		}
 
 
@@ -282,33 +280,16 @@ class Generator extends \yii\gii\Generator
 		 * @return string Code to implement the dropdown list with the foreign key values.
 		 */
 		public function generateFkDropdown($attribute){
-				$foreignKeys = $this->getForeignKeysList($attribute);
-				$tableName = $foreignKeys[0];
-				$fkeys = $foreignKeys[1];
+				$foreignKeys = $this->getForeignKeysList();
+				$tableName = $foreignKeys[$attribute];
+				$className = Inflector::id2camel($tableName,"_");
+				$fkeys = array_keys($foreignKeys);
 				
 				//If the name of the column is found in the foreign keys list, then generate a dropdown
 				//using the relationship of the tables.
-				$tableName = ucfirst($tableName);
 				$code = "\t// Dropdown list for column: ".$attribute."\n";
-				$nameColumn = $this->defaultNameColumn;//'name';
-				if($tableName == 'User'){
-					$nameColumn = $this->defaultUsernameColumn;//'username';
-					$code .= "\ttry{// The User model is a special case if using the Yii2-Admin extension.\n";
-					$code .= "\t\t\$className = 'mdm\\admin\\models\\".$tableName."';\n";
-					$code .= "\t\t\$refModel = new \$className;\n";
-					$code .= "\t}catch(Exception \$e){\n";
-					$code .= "\t\ttry{\n";
-					$code .= "\t\t\t\$className = 'app\\models\\".$tableName."';\n";
-					$code .= "\t\t\t\$refModel = new \$tableName;\n";
-					$code .= "\t\t}catch(Exception \$e){\n";
-					$code .= "\t\t\tthrow new Exception('No User model found');\n";
-					$code .= "\t\t}\n";
-					$code .= "\t}\n";
-				}else{
-					$code .= "\t\$className = 'app\\models\\".$tableName."';\n";
-					$code .= "\t\$refModel = new \$className;\n";
-				}
-				$code .= "\t\$list = yii\\helpers\\ArrayHelper::map(\$refModel->find()->all(),'id','".$nameColumn."');\n";
+				$nameColumn = ($tableName == 'user') ? $this->defaultUsernameColumn : $this->defaultNameColumn;
+				$code .= "\t\$list = yii\\helpers\\ArrayHelper::map(".$className."::find()->all(),'id','".$nameColumn."');\n";
 				$code .= "\tif(!empty(\$list)){\n";
 				$code .= "\t\techo \$form->field(\$model,'".$attribute."')->dropDownList(\$list,['prompt'=>'--Select ".$attribute."--']);\n";
 				$code .= "\t}else{\n";
@@ -325,8 +306,9 @@ class Generator extends \yii\gii\Generator
 		 * @return string Code to implement the value of the DetailView widget.
 		 */
 		public function generateDetailViewForeignKey($attribute){
-			$foreignKeys = $this->getForeignKeysList($attribute);
-			$tableName = $foreignKeys[0];
+			$foreignKeys = $this->getForeignKeysList();
+			$tableName = $foreignKeys[$attribute];
+			$refModel = lcfirst(Inflector::id2camel($tableName,"_"));
 			$columnName = ucfirst($attribute);
 			$foreignNameColumn = $this->defaultNameColumn;
 
@@ -339,13 +321,13 @@ class Generator extends \yii\gii\Generator
 			if($tableName == 'user'){
 				$foreignNameColumn = $this->defaultUsernameColumn;
 				$detail .= $space."\t'value' => ";
-				$detail .= "!empty(\$model->".$tableName."->".$foreignNameColumn.") ? ";
-				$detail .= "yii\\helpers\\HTML::encode(\$model->".$tableName."->".$foreignNameColumn.") : ";
+				$detail .= "!empty(\$model->".$refModel."->".$foreignNameColumn.") ? ";
+				$detail .= "yii\\helpers\\HTML::encode(\$model->".$refModel."->".$foreignNameColumn.") : ";
 				$detail .= "'<span class=\"not-set\">(not set)</span>',\n";
 			}else{
 				$detail .= $space."\t'value' => ";
-				$detail .= "!empty(\$model->".$tableName."->".$foreignNameColumn.") ? ";
-				$detail .= "yii\\helpers\\HTML::encode(\$model->".$tableName."->".$foreignNameColumn.") : ";
+				$detail .= "!empty(\$model->".$refModel."->".$foreignNameColumn.") ? ";
+				$detail .= "yii\\helpers\\HTML::encode(\$model->".$refModel."->".$foreignNameColumn.") : ";
 				$detail .= "'<span class=\"not-set\">(not set)</span>',\n";			
 			}
 			$detail .= $space."]";
@@ -357,8 +339,9 @@ class Generator extends \yii\gii\Generator
 		 * for the columns that have a foreign key.
 		 */
 		public function generateGridViewForeignKey($attribute){
-			$foreignKeys = $this->getForeignKeysList($attribute);
-			$tableName = $foreignKeys[0];
+			$foreignKeys = $this->getForeignKeysList();
+			$tableName = $foreignKeys[$attribute];
+			$refModel = lcfirst(Inflector::id2camel($tableName,"_"));
 			$columnName = ucfirst($attribute);
 			$foreignNameColumn = $this->defaultNameColumn;
 			
@@ -369,9 +352,9 @@ class Generator extends \yii\gii\Generator
 			//use terniary operator to avoid a crash if foreign key is not set
 			$attr = "";
 			if($tableName == "user"){
-				$attr = $tableName.".".$this->defaultUsernameColumn;
+				$attr = $refModel.".".$this->defaultUsernameColumn;
 			}else{
-				$attr = $tableName.".".$this->defaultNameColumn;
+				$attr = $refModel.".".$this->defaultNameColumn;
 			}
 			$detail .= $space."\t'attribute' => '".$attr."',\n";
 			$detail .= $space."\t'format' => 'text',\n";
@@ -388,9 +371,8 @@ class Generator extends \yii\gii\Generator
      */
     public function generateActiveField($attribute)
     {
-				$foreignKeys = $this->getForeignKeysList($attribute);
-				$tableName = $foreignKeys[0];
-				$fkeys = $foreignKeys[1];
+				$foreignKeys = $this->getForeignKeysList();
+				$fkeys = array_keys($foreignKeys);
 
         $tableSchema = $this->getTableSchema();
         if ($tableSchema === false || !isset($tableSchema->columns[$attribute])) {

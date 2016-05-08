@@ -18,7 +18,23 @@ echo "<?php\n";
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-
+<?php
+		//Add required use lines for each related model to use
+		//in the dropdown lists
+		$foreignKeys = $generator->getForeignKeysList();
+		$includeModels = array_values($foreignKeys);
+		foreach($includeModels as $model){
+				if($model == 'user'){
+					if(class_exists("mdm\admin\models\User")){
+							echo "use mdm\\admin\\models\\User;\n";
+					}else{
+							echo "use app\\models\\User;\n";
+					}
+				}else{
+					echo "use app\\models\\".Inflector::id2camel($model,"_").";\n";
+				}
+		}
+?>
 /* @var $this yii\web\View */
 /* @var $model <?= ltrim($generator->modelClass, '\\') ?> */
 /* @var $form yii\widgets\ActiveForm */
