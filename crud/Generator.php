@@ -354,7 +354,8 @@ class Generator extends \yii\gii\Generator
 			$attr = "";
 			if($tableName == "user"){
 				$foreignNameColumn = $this->defaultUsernameColumn;
-				$routeName = 'admin/'.$routeName;
+				//If Yii2-Admin extension is installed prepend the user route with admin so: admin/user is the correct route.
+				if(class_exists('mdm\admin\models\User')) $routeName = 'admin/'.$routeName;
 			}
 			$attr = $refModel.".".$foreignNameColumn;
 			$detail .= $space."\t'attribute' => '".$attr."',\n";
@@ -365,12 +366,6 @@ class Generator extends \yii\gii\Generator
 			$detail .= $space."\t},\n";
 			$detail .= $space."]";
 			return $detail;
-			
-			
-			//'value' => 	function($model,$key,$index,$column){
-				//return yii\helpers\HTML::a($model->device->name,['device/view','id'=>$model->device->id]);
-			//},			
-			
 		}
 
 
