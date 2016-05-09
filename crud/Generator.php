@@ -342,6 +342,7 @@ class Generator extends \yii\gii\Generator
 			$foreignKeys = $this->getForeignKeysList();
 			$tableName = $foreignKeys[$attribute];
 			$refModel = lcfirst(Inflector::id2camel($tableName,"_"));
+			$routeName = Inflector::camel2id($refModel); // Turns a FirstClass into first-class, which is the way routes are implemented.
 			$columnName = ucfirst($attribute);
 			$foreignNameColumn = $this->defaultNameColumn;
 			
@@ -352,15 +353,24 @@ class Generator extends \yii\gii\Generator
 			//use terniary operator to avoid a crash if foreign key is not set
 			$attr = "";
 			if($tableName == "user"){
-				$attr = $refModel.".".$this->defaultUsernameColumn;
-			}else{
-				$attr = $refModel.".".$this->defaultNameColumn;
+				$foreignNameColumn = $this->defaultUsernameColumn;
+				$routeName = 'admin/'.$routeName;
 			}
+			$attr = $refModel.".".$foreignNameColumn;
 			$detail .= $space."\t'attribute' => '".$attr."',\n";
-			$detail .= $space."\t'format' => 'text',\n";
+			$detail .= $space."\t'format' => 'html',\n";
 			$detail .= $space."\t'label' => '".ucfirst($tableName)." (".$attribute.")"."',\n";
+			$detail .= $space."\t'value' => function(\$model,\$key,\$index,\$column){\n";
+			$detail .= $space."\t\treturn yii\\helpers\\HTML::a(\$model->".$refModel."->".$foreignNameColumn.",['".$routeName."/view','id'=>\$model->".$refModel."->id]);\n";
+			$detail .= $space."\t},\n";
 			$detail .= $space."]";
 			return $detail;
+			
+			
+			//'value' => 	function($model,$key,$index,$column){
+				//return yii\helpers\HTML::a($model->device->name,['device/view','id'=>$model->device->id]);
+			//},			
+			
 		}
 
 

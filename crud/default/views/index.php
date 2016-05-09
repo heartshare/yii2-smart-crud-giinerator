@@ -54,9 +54,8 @@ if (($tableSchema = $generator->getTableSchema()) === false) {
     foreach ($tableSchema->columns as $column) {
         $format = $generator->generateColumnFormat($column);
         
-        //The following modification was done to account for foreign key relationships with other models.
+				//The following modification was done to account for foreign key relationships with other models.
         $generatedValue = "";
-        
         if($generator->enableSmartFK){
 					if($generator->isForeignKey($column->name)){
 							$generatedValue = $generator->generateGridViewForeignKey($column->name);
@@ -66,6 +65,8 @@ if (($tableSchema = $generator->getTableSchema()) === false) {
 				}else{
 					 $generatedValue = "'".$column->name."'";
 				}
+        //-----------------------------------------------------------------------------------------------
+        
         
         if (++$count < 6) {
             echo "            " . $generatedValue . ($format === 'text' ? "" : ":" . $format) . ",\n";
