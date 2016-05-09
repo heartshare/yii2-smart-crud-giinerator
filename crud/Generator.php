@@ -309,6 +309,7 @@ class Generator extends \yii\gii\Generator
 			$foreignKeys = $this->getForeignKeysList();
 			$tableName = $foreignKeys[$attribute];
 			$refModel = lcfirst(Inflector::id2camel($tableName,"_"));
+			$routeName = Inflector::camel2id($refModel); // Turns a FirstClass into first-class, which is the way routes are implemented.
 			$columnName = ucfirst($attribute);
 			$foreignNameColumn = $this->defaultNameColumn;
 
@@ -320,16 +321,13 @@ class Generator extends \yii\gii\Generator
 			//use terniary operator to avoid a crash if foreign key is not set
 			if($tableName == 'user'){
 				$foreignNameColumn = $this->defaultUsernameColumn;
-				$detail .= $space."\t'value' => ";
-				$detail .= "!empty(\$model->".$refModel."->".$foreignNameColumn.") ? ";
-				$detail .= "yii\\helpers\\HTML::encode(\$model->".$refModel."->".$foreignNameColumn.") : ";
-				$detail .= "'<span class=\"not-set\">(not set)</span>',\n";
-			}else{
-				$detail .= $space."\t'value' => ";
-				$detail .= "!empty(\$model->".$refModel."->".$foreignNameColumn.") ? ";
-				$detail .= "yii\\helpers\\HTML::encode(\$model->".$refModel."->".$foreignNameColumn.") : ";
-				$detail .= "'<span class=\"not-set\">(not set)</span>',\n";			
+				//If Yii2-Admin extension is installed prepend the user route with admin so: admin/user is the correct route.
+				if(class_exists('mdm\admin\models\User')) $routeName = 'admin/'.$routeName;
 			}
+			$detail .= $space."\t'value' => ";
+			$detail .= "!empty(\$model->".$refModel."->".$foreignNameColumn.") ? ";
+			$detail .= "yii\\helpers\\HTML::a(\$model->".$refModel."->".$foreignNameColumn.",['".$routeName."/view','id'=>\$model->".$refModel."->id])";
+			$detail .= " : '<span class=\"not-set\">(not set)</span>',\n";
 			$detail .= $space."]";
 			return $detail;
 		}
